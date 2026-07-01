@@ -11,15 +11,31 @@
       - tshark
       - fcrackzip
       - john
-      - stegdetect
       - steghide
       - unzip
-      - p7zip-full
+      - p7zip
       - libreoffice
     state: present
     update_cache: true
   environment:
     DEBIAN_FRONTEND: noninteractive
+
+- name: Download stegdetect source
+  git:
+    repo: https://github.com/abeluck/stegdetect.git
+    dest: /opt/stegdetect
+    version: master
+
+- name: Build and install stegdetect
+  shell: |
+    cd /opt/stegdetect
+    autoreconf -i || true
+    linux32 ./configure
+    linux32 make
+    make install
+  args:
+    creates: /usr/local/bin/stegdetect
+    executable: /bin/bash
 
 - name: Create evidence directory
   file:
