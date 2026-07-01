@@ -1,0 +1,64 @@
+- name: Install digital forensics & network analysis tools
+  apt:
+    name:
+      - sleuthkit
+      - autopsy
+      - foremost
+      - scalpel
+      - binwalk
+      - exiftool
+      - wireshark
+      - tshark
+      - fcrackzip
+      - john
+      - stegdetect
+      - steghide
+      - unzip
+      - p7zip-full
+      - libreoffice
+    state: present
+    update_cache: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Create evidence directory
+  file:
+    path: /home/user/evidence
+    state: directory
+    owner: user
+    group: user
+    mode: '0755'
+
+- name: Download Rhino Hunt evidence archive (DFRWS 2005 RODEO)
+  get_url:
+    url: https://cfreds-archive.nist.gov/dfrws/DFRWS2005-RODEO.zip
+    dest: /tmp/DFRWS2005-RODEO.zip
+    mode: '0644'
+
+- name: Extract evidence archive
+  unarchive:
+    src: /tmp/DFRWS2005-RODEO.zip
+    dest: /home/user/evidence
+    remote_src: true
+    owner: user
+    group: user
+
+- name: Generate checksum manifest for trainee reference
+  shell: |
+    cd /home/user/evidence
+    md5sum RHINOUSB.dd rhino.log rhino2.log rhino3.log > checksums.txt
+    chown user:user checksums.txt
+  args:
+    executable: /bin/bash
+
+- name: Remove wordlists not needed for this scenario
+  file:
+    path: "/usr/share/wordlists/{{ item }}"
+    state: absent
+  with_items:
+    - dirb
+    - dirbuster
+    - fern-wifi
+    - metasploit
+    - nmap.lst
+    - wfuzz

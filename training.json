@@ -1,0 +1,338 @@
+{
+  "title": "Rhino Hunt",
+  "description": "A digital forensics investigation based on the DFRWS 2005 RODEO CHALLENGE (NIST CFReDS). Trainees analyze network traces, a USB drive image, and carved files to build a case of illegal possession of digital images.",
+  "prerequisites": [
+    "Basic knowledge of the Linux command line",
+    "Basic understanding of TCP/IP, FTP and HTTP protocols",
+    "Willingness to read tool manuals (man pages / --help)"
+  ],
+  "outcomes": [
+    "Analyzing network packet captures with tshark/Wireshark to extract credentials",
+    "Carving files out of FTP/HTTP data streams",
+    "Cracking a password-protected ZIP archive",
+    "File carving from a raw disk (dd) image with foremost/scalpel",
+    "Detecting and breaking steganography with stegdetect/stegbreak",
+    "Using MD5 hashes to correlate evidence across multiple sources"
+  ],
+  "state": "UNRELEASED",
+  "levels": [
+    {
+      "title": "Introduction",
+      "level_type": "INFO_LEVEL",
+      "order": 0,
+      "estimated_duration": 0,
+      "minimal_possible_solve_time": null,
+      "content": "# Rhino Hunt\n\nIn 2004, the city of New Orleans passed a law making possession of nine or more unique rhinoceros images a serious crime. The network administrator at the University of New Orleans recently alerted police after his intrusion-detection system flagged illegal 'rhino traffic' on the campus network.\n\nEvidence in the case includes a USB key seized from a university lab (the computer it was used with had no hard drive) and three network traces captured by the administrator, all involving the same suspect: a Ph.D. student who has been at the university since 1972.\n\nYou are the digital forensic examiner assigned to this case. Your job is to recover at least nine unique rhino images from the available evidence and answer the investigator's questions.\n\n## Disclaimer\n\nThis game is for educational purposes only.\n\n## Attribution\n\nBased on the DFRWS 2005 RODEO CHALLENGE dataset, contributed by Dr. Golden G. Richard III and hosted by NIST CFReDS (https://cfreds-archive.nist.gov/dfrws/Rhino_Hunt.html).\n\n## License\n\nThis work is licensed under CC BY 4.0. Terms of this license are available at: https://creativecommons.org/licenses/by/4.0"
+    },
+    {
+      "title": "Get Access",
+      "level_type": "ACCESS_LEVEL",
+      "order": 1,
+      "estimated_duration": 0,
+      "minimal_possible_solve_time": null,
+      "passkey": "start",
+      "cloud_content": "Your first task is to access the sandbox where all the evidence has already been downloaded for you. After you have successfully connected, submit the answer **`start`**.\n\n### Sandbox access\n1. In the topology overview on the right, right-click on **`workstation`** and then click on **`Open GUI`**.\n2. Login with username **`user`** and password **`Password123`**.\n3. The evidence files are located in **`/home/user/evidence`**.",
+      "local_content": "This sandbox has not been tested for use with local sandbox."
+    },
+    {
+      "title": "Level 1: Who's the account owner and what's the password?",
+      "level_type": "TRAINING_LEVEL",
+      "order": 2,
+      "estimated_duration": 20,
+      "minimal_possible_solve_time": null,
+      "answer": "gnome/gnome123",
+      "answer_variable_name": null,
+      "content": "The first network trace, **rhino.log**, contains a telnet session. Someone logged in to a telnet/ftp account that was apparently given to the suspect by another person.\n\nOpen **rhino.log** in Wireshark (or use `tshark`) and follow the **telnet stream**.\n\nAs a flag, submit the username and password separated by a slash, in the format `username/password`.",
+      "solution": "```\nuser@workstation:~/evidence$ wireshark rhino.log\n```\nRight-click a telnet packet -> Follow -> TCP Stream. Read the typed characters (telnet echoes them one at a time) to reconstruct the login and password.\n\nThe flag is: ${ANSWER}\n",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "Which tool should you use?",
+          "content": "Use **Wireshark** (GUI) or **tshark** (CLI) to open `rhino.log`.",
+          "hint_penalty": 0,
+          "order": 0
+        },
+        {
+          "title": "Which protocol is relevant?",
+          "content": "Filter for the **telnet** protocol. Telnet is unencrypted, so the login can be read directly from the stream.",
+          "hint_penalty": 0,
+          "order": 1
+        },
+        {
+          "title": "How do I read the session?",
+          "content": "Right-click a telnet packet and choose **Follow > TCP Stream** to see the full character-by-character login sequence.",
+          "hint_penalty": 0,
+          "order": 2
+        }
+      ],
+      "incorrect_answer_limit": 100,
+      "attachments": [],
+      "max_score": 1,
+      "variant_answers": false,
+      "reference_solution": [],
+      "mitre_techniques": [],
+      "expected_commands": [],
+      "commands_required": false
+    },
+    {
+      "title": "Level 2: Recover the FTP transfers",
+      "level_type": "TRAINING_LEVEL",
+      "order": 3,
+      "estimated_duration": 25,
+      "minimal_possible_solve_time": null,
+      "answer": "contraband.zip",
+      "answer_variable_name": null,
+      "content": "The same trace, **rhino.log**, also contains **FTP data transfers**. Carve out the transferred files from the FTP data stream.\n\nYou should recover two images directly, plus one archive file.\n\nAs a flag, submit the **exact file name of the password-protected archive** you recovered.",
+      "solution": "```\nuser@workstation:~/evidence$ wireshark rhino.log\n```\nFilter on `ftp-data`, follow each **TCP stream**, and use *Show and save data as* to export the raw bytes to files (e.g. `rhino1.jpg`, `rhino3.jpg`, `contraband.zip`). Identify the file type of each stream with `file <filename>`.\n\nThe flag is: ${ANSWER}\n",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "Which filter should I use?",
+          "content": "In Wireshark, use the display filter `ftp-data` to isolate the actual file transfer packets (as opposed to FTP control commands).",
+          "hint_penalty": 0,
+          "order": 0
+        },
+        {
+          "title": "How do I save the carved file?",
+          "content": "Follow the TCP stream of each `ftp-data` conversation, switch the view to **Raw**, and use **Save as** to write the bytes to disk.",
+          "hint_penalty": 0,
+          "order": 1
+        },
+        {
+          "title": "How do I know what type of file it is?",
+          "content": "Run `file <filename>` on the carved output, or check the first bytes (magic number) with `xxd <filename> | head`.",
+          "hint_penalty": 0,
+          "order": 2
+        }
+      ],
+      "incorrect_answer_limit": 100,
+      "attachments": [],
+      "max_score": 1,
+      "variant_answers": true,
+      "reference_solution": [],
+      "mitre_techniques": [],
+      "expected_commands": [],
+      "commands_required": false
+    },
+    {
+      "title": "Level 3: Crack the archive password",
+      "level_type": "TRAINING_LEVEL",
+      "order": 4,
+      "estimated_duration": 15,
+      "minimal_possible_solve_time": null,
+      "answer": "monkey",
+      "answer_variable_name": null,
+      "content": "The archive you carved in the previous level is protected with a password. Crack it using a dictionary attack.\n\nAs a flag, submit the password.",
+      "solution": "```\nuser@workstation:~/evidence$ fcrackzip -v -u -D -p /usr/share/wordlists/rockyou.txt ${level_2_flag}\n```\n\nThe flag is: ${ANSWER}\n",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "Which tool should you use?",
+          "content": "Use **fcrackzip** with a dictionary (`-D`) and unzip-verify (`-u`) mode.",
+          "hint_penalty": 0,
+          "order": 0
+        },
+        {
+          "title": "Which wordlist?",
+          "content": "Try `/usr/share/wordlists/rockyou.txt`, which is preinstalled on the workstation.",
+          "hint_penalty": 0,
+          "order": 1
+        }
+      ],
+      "incorrect_answer_limit": 100,
+      "attachments": [],
+      "max_score": 1,
+      "variant_answers": false,
+      "reference_solution": [],
+      "mitre_techniques": [],
+      "expected_commands": [],
+      "commands_required": false
+    },
+    {
+      "title": "Level 4: Investigate the remaining network traces",
+      "level_type": "TRAINING_LEVEL",
+      "order": 5,
+      "estimated_duration": 20,
+      "minimal_possible_solve_time": null,
+      "answer": "rhino.exe",
+      "answer_variable_name": null,
+      "content": "Two more traces are available: **rhino2.log** and **rhino3.log**.\n\n- Carve the objects transferred over **HTTP** in `rhino2.log` (there are two of them, both rhino-related images).\n- Carve the object transferred over **HTTP** in `rhino3.log`. This one is **not** an image — it's an executable.\n\nAs a flag, submit the file name of the executable recovered from `rhino3.log`.",
+      "solution": "```\nuser@workstation:~/evidence$ wireshark rhino2.log\n```\nUse **File > Export Objects > HTTP** to extract the two images directly.\n```\nuser@workstation:~/evidence$ wireshark rhino3.log\n```\nUse the same technique to export the object from `rhino3.log` and inspect it with `file`.\n\nThe flag is: ${ANSWER}\n",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "Is there an easier way than manual carving?",
+          "content": "Wireshark has a built-in menu: **File > Export Objects > HTTP**, which lists and saves every object transferred over HTTP in one click.",
+          "hint_penalty": 0,
+          "order": 0
+        },
+        {
+          "title": "What does the executable turn out to be?",
+          "content": "Run the file through `strings` — it reveals it is an early version of a well-known Windows disk-partitioning utility.",
+          "hint_penalty": 0,
+          "order": 1
+        }
+      ],
+      "incorrect_answer_limit": 100,
+      "attachments": [],
+      "max_score": 1,
+      "variant_answers": true,
+      "reference_solution": [],
+      "mitre_techniques": [],
+      "expected_commands": [],
+      "commands_required": false
+    },
+    {
+      "title": "Level 5: Carve the USB key image",
+      "level_type": "TRAINING_LEVEL",
+      "order": 6,
+      "estimated_duration": 25,
+      "minimal_possible_solve_time": null,
+      "answer": "diary.doc",
+      "answer_variable_name": null,
+      "content": "The suspect's USB key was reformatted, but a raw **dd** image of it (`RHINOUSB.dd`) was preserved before the wipe overwrote everything. Mount it and run a **file carving** tool to recover deleted content — including a hidden Word document that may hold the key to this whole case.\n\nAs a flag, submit the **file name of the carved Word document**.",
+      "solution": "```\nuser@workstation:~/evidence$ mkdir carved\nuser@workstation:~/evidence$ foremost -t jpg,gif,doc -i RHINOUSB.dd -o carved\nuser@workstation:~/evidence$ ls carved/doc/\n```\n\nThe flag is: ${ANSWER}\n",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "Which tool should you use?",
+          "content": "Use **foremost** or **scalpel** to carve files directly out of the raw `.dd` image based on file signatures.",
+          "hint_penalty": 0,
+          "order": 0
+        },
+        {
+          "title": "Which file types should I look for?",
+          "content": "Restrict carving to `jpg`, `gif` and `doc` with `-t jpg,gif,doc` to speed things up and reduce noise.",
+          "hint_penalty": 0,
+          "order": 1
+        }
+      ],
+      "incorrect_answer_limit": 100,
+      "attachments": [],
+      "max_score": 1,
+      "variant_answers": true,
+      "reference_solution": [],
+      "mitre_techniques": [],
+      "expected_commands": [],
+      "commands_required": false
+    },
+    {
+      "title": "Level 6: Read the diary",
+      "level_type": "TRAINING_LEVEL",
+      "order": 7,
+      "estimated_duration": 15,
+      "minimal_possible_solve_time": null,
+      "answer": null,
+      "answer_variable_name": "level_6_flag",
+      "content": "Open the Word document you carved in the previous level. Buried among personal entries, the suspect describes what he did with the hard drive and reveals who originally gave him the telnet/ftp account.\n\nAs a flag, submit the **first name of the person who gave the suspect the account**, exactly as written in the diary.",
+      "solution": "```\nuser@workstation:~/evidence/carved/doc$ libreoffice --headless --convert-to txt <filename>.doc\nuser@workstation:~/evidence/carved/doc$ cat <filename>.txt\n```\nRead through the entries; the relevant passage is near the end.\n\nThe flag is: ${ANSWER}\n",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "How do I read a .doc file on Linux?",
+          "content": "Convert it to plain text with `libreoffice --headless --convert-to txt <file>`, or open it directly in LibreOffice Writer.",
+          "hint_penalty": 0,
+          "order": 0
+        },
+        {
+          "title": "Where in the document should I look?",
+          "content": "The diary is long. Search (Ctrl+F) for the words **rhino** or **password** to jump straight to the relevant entry.",
+          "hint_penalty": 0,
+          "order": 1
+        }
+      ],
+      "incorrect_answer_limit": 100,
+      "attachments": [],
+      "max_score": 1,
+      "variant_answers": true,
+      "reference_solution": [],
+      "mitre_techniques": [],
+      "expected_commands": [],
+      "commands_required": false
+    },
+    {
+      "title": "Level 7: Break the hidden steganography",
+      "level_type": "TRAINING_LEVEL",
+      "order": 8,
+      "estimated_duration": 30,
+      "minimal_possible_solve_time": null,
+      "answer": null,
+      "answer_variable_name": "level_7_flag",
+      "content": "Among the JPG images carved from the USB key image, two contain **hidden data** embedded with steganography (JPHide). Detect and break the steganography, then extract the hidden rhino images.\n\nAs a flag, submit **both passwords**, separated by a comma, in the order: `password_of_alligator2, password_of_alligator3`.",
+      "solution": "```\nuser@workstation:~/evidence/carved/jpg$ stegdetect *.jpg\n```\nThis flags two files as containing jphide-embedded data.\n```\nuser@workstation:~/evidence/carved/jpg$ stegbreak -f /usr/share/wordlists/rockyou.txt <flagged-file-1> <flagged-file-2>\n```\nOnce cracked, extract the hidden image with `jphide`'s companion tool `jpseek <file> output.jpg` and enter the discovered passphrase when prompted.\n\nThe flag is: ${ANSWER}\n",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "How do I know which files contain hidden data?",
+          "content": "Run **stegdetect** against all carved JPGs; it will report which ones are positive for `jphide`.",
+          "hint_penalty": 0,
+          "order": 0
+        },
+        {
+          "title": "How do I crack the passphrase?",
+          "content": "Use **stegbreak** with a wordlist (e.g. `rockyou.txt`) against the flagged files.",
+          "hint_penalty": 0,
+          "order": 1
+        },
+        {
+          "title": "How do I extract the hidden image once I have the password?",
+          "content": "Use `jpseek <carrier-file> <output-file>` and supply the cracked passphrase when prompted, to extract the embedded rhino image.",
+          "hint_penalty": 0,
+          "order": 2
+        }
+      ],
+      "incorrect_answer_limit": 100,
+      "attachments": [],
+      "max_score": 1,
+      "variant_answers": true,
+      "reference_solution": [],
+      "mitre_techniques": [],
+      "expected_commands": [],
+      "commands_required": false
+    },
+    {
+      "title": "Level 8: Correlate the evidence",
+      "level_type": "TRAINING_LEVEL",
+      "order": 9,
+      "estimated_duration": 15,
+      "minimal_possible_solve_time": null,
+      "answer": null,
+      "answer_variable_name": "level_8_flag",
+      "content": "One image appears in **both** the network traces (inside the cracked archive) and the carved USB key data. This is the strongest link between the two pieces of evidence.\n\nCompute the **MD5 hash** of the image you carved directly from `contraband.zip` and compare it to the MD5 hash of the matching image carved from `RHINOUSB.dd`.\n\nAs a flag, submit the **MD5 hash** (lowercase hex) that both copies share.",
+      "solution": "```\nuser@workstation:~/evidence$ md5sum carved/jpg/rhino2.jpg\nuser@workstation:~/evidence$ md5sum contraband_extracted/rhino2.jpg\n```\nBoth commands should output the same hash, proving the two files are byte-for-byte identical and therefore the same evidence.\n\nThe flag is: ${ANSWER}\n",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "Which two files should I compare?",
+          "content": "Compare the `rhino2.jpg` you extracted from `contraband.zip` (Level 3) with the `rhino2.jpg` carved from `RHINOUSB.dd` (Level 5) — they share the same file name.",
+          "hint_penalty": 0,
+          "order": 0
+        },
+        {
+          "title": "Which tool computes the hash?",
+          "content": "Use `md5sum <file>` on both copies and compare the output.",
+          "hint_penalty": 0,
+          "order": 1
+        }
+      ],
+      "incorrect_answer_limit": 100,
+      "attachments": [],
+      "max_score": 1,
+      "variant_answers": true,
+      "reference_solution": [],
+      "mitre_techniques": [],
+      "expected_commands": [],
+      "commands_required": false
+    },
+    {
+      "title": "Epilogue",
+      "level_type": "INFO_LEVEL",
+      "order": 10,
+      "estimated_duration": 0,
+      "minimal_possible_solve_time": null,
+      "content": "Case closed. You have recovered at least nine unique rhino images from network traffic and a reformatted USB drive, cracked two passwords, broken hidden steganography, and matched hash values to place the same evidence at two different points in the suspect's activity.\n\nYour final report should note who supplied the account, what happened to the missing hard drive, and how the USB key and network evidence connect — all of it now backed by reproducible technical findings.\n\n**Attribution**:\n\nDataset: DFRWS 2005 RODEO CHALLENGE, contributed by Dr. Golden G. Richard III, hosted by NIST CFReDS (https://cfreds-archive.nist.gov/dfrws/Rhino_Hunt.html)\n\nGame adaptation for CyberRangeCZ Platform: [your name/team here]"
+    }
+  ],
+  "estimated_duration": 165,
+  "variant_sandboxes": false
+}

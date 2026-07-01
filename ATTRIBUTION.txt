@@ -1,0 +1,24 @@
+This repository uses a dual licensing approach:
+
+- The code (Ansible provisioning, topology, and custom scripts) is licensed
+  under the terms of the MIT License (https://opensource.org/license/mit).
+- The game design and training content are licensed under a Creative Commons
+  Attribution 4.0 International License (CC BY 4.0).
+
+Attribution:
+
+Based on the "Rhino Hunt" dataset from the DFRWS 2005 RODEO CHALLENGE:
+https://cfreds-archive.nist.gov/dfrws/Rhino_Hunt.html
+
+Dataset contributed by: Dr. Golden G. Richard III
+Hosted by: NIST Computer Forensic Reference Data Sets (CFReDS)
+
+Evidence archive: DFRWS2005-RODEO.zip
+  - RHINOUSB.dd   MD5: 80348c58eec4c328ef1f7709adc56a54
+  - rhino.log     MD5: c0d0093eb1664cd7b73f3a5225ae3f30
+  - rhino2.log    MD5: cd21eaf4acfb50f71ffff857d7968341
+  - rhino3.log    MD5: 7e29f9d67346df25faaf18efcd95fc30
+
+Original answer key: https://cfreds-archive.nist.gov/dfrws/DFRWS2005-answers.pdf
+
+Game adaptation for CyberRangeCZ Platform by: [your name / team]

@@ -1,0 +1,35 @@
+name: library-rhino-hunt
+
+hosts:
+- name: workstation
+  base_box:
+    image: kali
+    mgmt_user: debian
+  flavor: standard.kali
+
+routers:
+- name: router
+  base_box:
+    image: debian-12-x86_64
+    mgmt_user: debian
+  flavor: standard.small
+
+wan:
+  name: internet-connection
+  cidr: 100.100.100.0/24
+
+networks:
+- name: switch
+  cidr: 10.1.0.0/16
+
+net_mappings:
+- host: workstation
+  network: switch
+  ip: 10.1.135.83
+
+router_mappings:
+- router: router
+  network: switch
+  ip: 10.1.0.1
+
+groups: []
