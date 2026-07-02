@@ -13,12 +13,48 @@
       - john
       - steghide
       - unzip
-      - p7zip
+      - p7zip-full
       - libreoffice
     state: present
     update_cache: true
   environment:
     DEBIAN_FRONTEND: noninteractive
+
+
+- name: Download stegdetect/stegbreak .deb (archived, no longer in apt)
+  get_url:
+    url: http://old-releases.ubuntu.com/ubuntu/pool/universe/s/stegdetect/stegdetect_0.6-6_amd64.deb
+    dest: /tmp/stegdetect.deb
+    mode: '0644'
+
+- name: Install stegdetect/stegbreak .deb
+  apt:
+    deb: /tmp/stegdetect.deb
+  register: stegdetect_install
+  failed_when: false
+
+- name: Fix broken dependencies if stegdetect .deb install failed
+  apt:
+    name: []
+    state: fixed
+  when: stegdetect_install is failed
+
+- name: Remove downloaded stegdetect .deb
+  file:
+    path: /tmp/stegdetect.deb
+    state: absent
+
+- name: Download precompiled jphide binary
+  get_url:
+    url: https://github.com/mmayfield1/SSAK/raw/master/programs/64/jphide
+    dest: /usr/local/bin/jphide
+    mode: '0755'
+
+- name: Download precompiled jpseek binary
+  get_url:
+    url: https://github.com/mmayfield1/SSAK/raw/master/programs/64/jpseek
+    dest: /usr/local/bin/jpseek
+    mode: '0755'
 
 - name: Create evidence directory
   file:
