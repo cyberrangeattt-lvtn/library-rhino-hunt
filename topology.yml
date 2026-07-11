@@ -20,7 +20,7 @@ wan:
 
 networks:
 - name: switch
-  cidr: 10.1.0.0/16
+  cidr: 10.1.135.0/24
 
 net_mappings:
 - host: workstation
@@ -30,6 +30,6 @@ net_mappings:
 router_mappings:
 - router: router
   network: switch
-  ip: 10.1.0.1
+  ip: 10.1.135.1
 
 groups: []
